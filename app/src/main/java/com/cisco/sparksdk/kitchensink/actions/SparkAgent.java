@@ -37,7 +37,6 @@ import com.ciscospark.androidsdk.phone.Call;
 import com.ciscospark.androidsdk.phone.CallObserver;
 import com.ciscospark.androidsdk.phone.MediaOption;
 import com.ciscospark.androidsdk.phone.Phone;
-import com.github.benoitdion.ln.Ln;
 
 import static com.cisco.sparksdk.kitchensink.actions.events.SparkAgentEvent.postEvent;
 
@@ -114,9 +113,7 @@ public class SparkAgent {
     }
 
     public boolean isCallIncoming() {
-        Boolean rst = incomingCall != null && !incomingCall.getStatus().equals(Call.CallStatus.DISCONNECTED);
-        if (incomingCall != null) Ln.e(incomingCall.getStatus().toString());
-        return rst;
+        return incomingCall != null && !incomingCall.getStatus().equals(Call.CallStatus.DISCONNECTED);
     }
 
     public void setCallCapability(CallCap cap) {
@@ -132,10 +129,10 @@ public class SparkAgent {
         phone.dial(callee, getMediaOption(localView, remoteView, screenSharing), (result) -> {
             if (result.isSuccessful()) {
                 activeCall = result.getData();
-                if (isDialing == false) {
+                if (!isDialing) {
                     hangup();
                 } else {
-                    activeCall.setObserver(callObserver);
+                    if(activeCall!=null) activeCall.setObserver(callObserver);
                 }
             }
             isDialing = false;

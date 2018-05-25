@@ -1,2 +1,1 @@
-include ':app'//, ':sdk'
-//project(':sdk').projectDir = new File('spark-android-sdk/sdk')
+include ':app'

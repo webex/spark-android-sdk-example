@@ -87,7 +87,7 @@ public class SetupFragment extends BaseFragment {
     public void onStart() {
         super.onStart();
         agent = SparkAgent.getInstance();
-        requirePermission();
+        //requirePermission();
     }
 
     private void requirePermission() {

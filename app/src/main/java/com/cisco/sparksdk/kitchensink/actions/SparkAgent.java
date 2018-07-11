@@ -23,6 +23,8 @@
 
 package com.cisco.sparksdk.kitchensink.actions;
 
+import android.net.Uri;
+import android.os.Environment;
 import android.util.Pair;
 import android.view.View;
 
@@ -32,11 +34,22 @@ import com.cisco.sparksdk.kitchensink.actions.events.HangupEvent;
 import com.cisco.sparksdk.kitchensink.actions.events.LoginEvent;
 import com.cisco.sparksdk.kitchensink.actions.events.OnIncomingCallEvent;
 import com.cisco.sparksdk.kitchensink.actions.events.RejectEvent;
+import com.ciscospark.androidsdk.CompletionHandler;
 import com.ciscospark.androidsdk.Spark;
+import com.ciscospark.androidsdk.message.LocalFile;
+import com.ciscospark.androidsdk.message.Mention;
+import com.ciscospark.androidsdk.message.Message;
+import com.ciscospark.androidsdk.message.MessageClient;
+import com.ciscospark.androidsdk.message.RemoteFile;
 import com.ciscospark.androidsdk.phone.Call;
 import com.ciscospark.androidsdk.phone.CallObserver;
 import com.ciscospark.androidsdk.phone.MediaOption;
 import com.ciscospark.androidsdk.phone.Phone;
+import com.github.benoitdion.ln.Ln;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Date;
 
 import static com.cisco.sparksdk.kitchensink.actions.events.SparkAgentEvent.postEvent;
 
@@ -53,6 +66,7 @@ public class SparkAgent {
 
     private Spark spark;
     private Phone phone;
+    private MessageClient messageClient;
     private Call activeCall;
     private Call incomingCall;
     private boolean isSpeakerOn = true;
@@ -124,6 +138,27 @@ public class SparkAgent {
         return callCap;
     }
 
+    public MessageClient getMessageClient() {
+        if (messageClient == null) {
+            messageClient = getSpark().messages();
+        }
+        return messageClient;
+    }
+
+    public void sendMessage(String idOrEmail, String message, Mention[] mentions, LocalFile[] files,
+                            CompletionHandler<Message> handler) {
+        getMessageClient().post(idOrEmail, message, mentions, files, handler);
+    }
+
+
+    public void downloadThumbnail(RemoteFile file, File saveTo, MessageClient.ProgressHandler handler, CompletionHandler<Uri> completionHandler) {
+        getMessageClient().downloadThumbnail(file, saveTo.getPath(), handler, completionHandler);
+    }
+
+    public void downloadFile(RemoteFile file, File saveTo, MessageClient.ProgressHandler handler, CompletionHandler<Uri> completionHandler) {
+        getMessageClient().downloadFile(file, saveTo.getPath(), handler, completionHandler);
+    }
+
     public void dial(String callee, View localView, View remoteView, View screenSharing) {
         isDialing = true;
         phone.dial(callee, getMediaOption(localView, remoteView, screenSharing), (result) -> {
@@ -132,7 +167,7 @@ public class SparkAgent {
                 if (!isDialing) {
                     hangup();
                 } else {
-                    if(activeCall!=null) activeCall.setObserver(callObserver);
+                    if (activeCall != null) activeCall.setObserver(callObserver);
                 }
             }
             isDialing = false;

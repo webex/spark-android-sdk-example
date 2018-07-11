@@ -116,11 +116,11 @@ public class CallFragment extends BaseFragment {
         return CallFragment.newInstance(INCOMING_CALL);
     }
 
-    public static CallFragment newInstance(String callee) {
+    public static CallFragment newInstance(String id) {
         CallFragment fragment = new CallFragment();
         Bundle args = new Bundle();
         args.putInt(LAYOUT, R.layout.fragment_call);
-        args.putString(CALLEE, callee);
+        args.putString(CALLEE, id);
         fragment.setArguments(args);
         return fragment;
     }
@@ -191,7 +191,7 @@ public class CallFragment extends BaseFragment {
         if (isConnected) {
             agent.hangup();
         } else {
-            ((LauncherActivity)getActivity()).goBackStack();
+            ((LauncherActivity) getActivity()).goBackStack();
         }
     }
 

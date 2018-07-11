@@ -12,7 +12,7 @@ buildscript {
     ext.gradleVersion = System.env.GRADLE_VERSION == null ? '3.0.1' : System.env.GRADLE_VERSION
 
     dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.1.51"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.2.30"
         classpath 'com.github.ben-manes:gradle-versions-plugin:0.12.0'
         classpath 'com.jakewharton.sdkmanager:gradle-plugin:0.12.0'
         // Hardcode 1.20.0. 1.21.0 crashes the app.

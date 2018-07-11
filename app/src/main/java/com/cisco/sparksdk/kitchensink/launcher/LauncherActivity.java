@@ -72,6 +72,11 @@ public class LauncherActivity extends Activity {
     }
 
     @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         RequirePermissionAction.PermissionsRequired(requestCode, grantResults);
     }

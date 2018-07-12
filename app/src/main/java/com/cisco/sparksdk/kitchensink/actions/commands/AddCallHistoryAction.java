@@ -50,7 +50,7 @@ public class AddCallHistoryAction implements IAction {
         history = new CallHistory();
         history.setEmail(email);
         history.setDirection(direction);
-        history.setData(new Date());
+        history.setDate(new Date());
     }
 
     @Override

@@ -6,15 +6,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,6 +27,7 @@ import android.widget.TextView;
 import com.cisco.sparksdk.kitchensink.R;
 import com.cisco.sparksdk.kitchensink.actions.SparkAgent;
 import com.cisco.sparksdk.kitchensink.ui.BaseFragment;
+import com.ciscospark.androidsdk.membership.Membership;
 import com.ciscospark.androidsdk.message.LocalFile;
 import com.ciscospark.androidsdk.message.Mention;
 import com.ciscospark.androidsdk.message.Message;
@@ -59,7 +59,7 @@ public class MessageFragment extends BaseFragment {
     EditText text_message;
 
     @BindView(R.id.message_view)
-    RecyclerView recyclerView;
+    RecyclerView recyclerView_message;
 
     @BindView(R.id.message_mention)
     ImageButton btn_mention;
@@ -67,16 +67,20 @@ public class MessageFragment extends BaseFragment {
     @BindView(R.id.message_status)
     TextView text_status;
 
-    @BindView(R.id.mention_text)
-    TextView text_mention;
+    @BindView(R.id.membership_recyclerview)
+    RecyclerView recyclerView_membership;
 
-    MessageAdapter adapter;
+    MessageAdapter adapterMessage;
+
+    MembershipAdapter adapterMembership;
 
     SparkAgent agent = SparkAgent.getInstance();
 
     MessageClient messageClient = agent.getMessageClient();
 
-    ArrayList<File> selectedFile = new ArrayList<>();
+    ArrayList<File> selectedFile;
+
+    ArrayList<Membership> mentionedMembershipList;
 
     String targetId;
 
@@ -96,37 +100,50 @@ public class MessageFragment extends BaseFragment {
 
     public MessageFragment() {
         // Required empty public constructor
+        selectedFile = new ArrayList<>();
+        mentionedMembershipList = new ArrayList<>();
     }
 
     @Override
     public void onActivityCreated(Bundle saved) {
         super.onActivityCreated(saved);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this.getActivity()));
-        adapter = new MessageAdapter(this.getActivity());
-        recyclerView.setAdapter(adapter);
+        recyclerView_message.setLayoutManager(new LinearLayoutManager(this.getActivity()));
+        adapterMessage = new MessageAdapter(this.getActivity());
+        recyclerView_message.setAdapter(adapterMessage);
+
         messageClient.setMessageObserver(evt -> {
             if (evt instanceof MessageObserver.MessageArrived) {
                 MessageObserver.MessageArrived event = (MessageObserver.MessageArrived) evt;
                 Ln.e("message: " + event.getMessage().toString());
-                adapter.mData.add(event.getMessage());
-                adapter.notifyDataSetChanged();
-                if (event.getMessage().getPersonEmail().equals("sparksdktestuser16@tropo.com")) {
-                    text_status.setText("");
-                }
+                adapterMessage.mData.add(event.getMessage());
+                adapterMessage.notifyDataSetChanged();
+                //if (event.getMessage().getPersonEmail().equals("sparksdktestuser16@tropo.com")) {
+                text_status.setText("");
+                //}
             } else {
                 MessageObserver.MessageDeleted event = (MessageObserver.MessageDeleted) evt;
                 Ln.e("message deleted " + event.getMessageId());
             }
         });
+
+        recyclerView_membership.setLayoutManager(new LinearLayoutManager(this.getActivity()));
+        adapterMembership = new MembershipAdapter(this.getActivity());
+        adapterMembership.mData.add(new MembershipAll());
+        recyclerView_membership.setAdapter(adapterMembership);
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        text_mention.setVisibility(View.GONE);
+        //text_mention.setVisibility(View.GONE);
+        recyclerView_membership.setVisibility(View.GONE);
         targetId = getTargetId();
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+    }
 
     private LocalFile[] generateLocalFiles() {
         ArrayList<LocalFile> arrayList = new ArrayList<>();
@@ -152,14 +169,14 @@ public class MessageFragment extends BaseFragment {
         return localFile;
     }
 
-    private Mention[] generateMentions(String[] mentions) {
+    private Mention[] generateMentions() {
         Mention.MentionAll mentionAll = new Mention.MentionAll();
         ArrayList<Mention> mentionList = new ArrayList<>();
-        for (String s : mentions) {
-            if (s.toUpperCase().equals("ALL")) {
+        for (Membership m : this.mentionedMembershipList) {
+            if (m instanceof MembershipAll) {
                 mentionList.add(mentionAll);
             } else {
-                Mention.MentionPerson person = new Mention.MentionPerson(s);
+                Mention.MentionPerson person = new Mention.MentionPerson(m.getPersonId());
                 mentionList.add(person);
             }
         }
@@ -181,24 +198,20 @@ public class MessageFragment extends BaseFragment {
     @OnClick(R.id.send_button)
     public void sendMessage(View btn) {
         if (!TextUtils.isEmpty(text_message.getText())) {
-            String mention_string = text_mention.getText().toString();
-            String[] strings = mention_string.split(" ");
-
             btn.setEnabled(false);
             agent.sendMessage(targetId,
                     text_message.getText().toString(),
-                    generateMentions(strings),
+                    generateMentions(),
                     generateLocalFiles(),
                     rst -> {
                         Ln.e("posted:" + rst.toString());
-                        text_mention.setText("");
                         selectedFile.clear();
                         btn.setEnabled(true);
                     });
             text_status.setText("sending ...");
             text_message.setText("");
         }
-        text_mention.setVisibility(View.GONE);
+        //text_mention.setVisibility(View.GONE);
         text_message.clearFocus();
         hideSoftKeyboard();
     }
@@ -217,11 +230,22 @@ public class MessageFragment extends BaseFragment {
 
     @OnClick(R.id.message_mention)
     public void mentionPeople() {
-        if (text_mention.getVisibility() == View.VISIBLE) {
-            text_mention.setVisibility(View.GONE);
+        if (recyclerView_membership.getVisibility() != View.VISIBLE) {
+            recyclerView_membership.setVisibility(View.VISIBLE);
+            recyclerView_message.setVisibility(View.GONE);
         } else {
-            text_mention.setVisibility(View.VISIBLE);
+            recyclerView_membership.setVisibility(View.GONE);
+            recyclerView_message.setVisibility(View.VISIBLE);
         }
+        SparkAgent.getInstance().getMembership(getTargetId(), result -> {
+            if (result.isSuccessful()) {
+                List<Membership> list = (List<Membership>) result.getData();
+                adapterMembership.mData.clear();
+                adapterMembership.mData.add(new MembershipAll());
+                adapterMembership.mData.addAll(list);
+                adapterMembership.notifyDataSetChanged();
+            }
+        });
     }
 
 
@@ -247,8 +271,7 @@ public class MessageFragment extends BaseFragment {
         }
     }
 
-
-    public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageViewHolder> {
+    class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageViewHolder> {
         private final LayoutInflater mLayoutInflater;
         private final Context mContext;
         private ArrayList<Message> mData;
@@ -259,6 +282,7 @@ public class MessageFragment extends BaseFragment {
             mLayoutInflater = LayoutInflater.from(mContext);
         }
 
+        @NonNull
         @Override
         public MessageViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             return new MessageViewHolder(mLayoutInflater.inflate(R.layout.listview_message, parent, false));
@@ -289,6 +313,7 @@ public class MessageFragment extends BaseFragment {
 
                 if (message.getRemoteFiles().get(0).thumbnail != null) {
                     holder.progressBar.setVisibility(View.VISIBLE);
+                    RemoteFile file = message.getRemoteFiles().get(0);
                     agent.downloadThumbnail(message.getRemoteFiles().get(0), null, null, (uri) -> {
                         holder.message_file.setImageURI(uri.getData());
                         holder.progressBar.setVisibility(View.GONE);
@@ -360,6 +385,8 @@ public class MessageFragment extends BaseFragment {
                 Ln.e(msg.toString());
                 if (msg.getRemoteFiles() != null) {
                     RemoteFile file = msg.getRemoteFiles().get(0);
+                    if (file == null)
+                        return;
                     agent.downloadFile(
                             file,
                             null,
@@ -380,6 +407,70 @@ public class MessageFragment extends BaseFragment {
             }
         }
     }
+
+    // fake membership implements ALL
+    private class MembershipAll extends Membership {
+        @Override
+        public String getPersonDisplayName() {
+            return "ALL";
+        }
+    }
+
+    class MembershipAdapter extends RecyclerView.Adapter<MembershipAdapter.MembershipViewHolder> {
+        private final LayoutInflater mLayoutInflater;
+        private final Context mContext;
+        private final ArrayList<Membership> mData;
+
+        MembershipAdapter(Context context) {
+            mContext = context;
+            mData = new ArrayList<>();
+            mLayoutInflater = LayoutInflater.from(mContext);
+        }
+
+
+        @NonNull
+        @Override
+        public MembershipViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            return new MembershipViewHolder(mLayoutInflater.inflate(R.layout.listitem_membership, parent, false));
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull MembershipViewHolder holder, int position) {
+            Membership membership = mData.get(position);
+            if (membership instanceof MembershipAll) {
+                holder.textContent.setText("ALL");
+            } else {
+                holder.textContent.setText(membership.getPersonDisplayName());
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return mData != null ? mData.size() : 0;
+        }
+
+        class MembershipViewHolder extends RecyclerView.ViewHolder {
+
+            @BindView(R.id.text_content)
+            TextView textContent;
+
+            @OnClick(R.id.text_content)
+            void onMembershipClick() {
+                int pos = getAdapterPosition();
+                Membership membership = mData.get(pos);
+                recyclerView_membership.setVisibility(View.GONE);
+                recyclerView_message.setVisibility(View.VISIBLE);
+                mentionedMembershipList.add(membership);
+                text_message.getText().append("@" + membership.getPersonDisplayName()).append(" ");
+            }
+
+            MembershipViewHolder(View itemView) {
+                super(itemView);
+                ButterKnife.bind(this, itemView);
+            }
+        }
+    }
+
 
     /**
      * helper to retrieve the path of an image URI

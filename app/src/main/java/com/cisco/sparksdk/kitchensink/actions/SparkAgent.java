@@ -24,7 +24,6 @@
 package com.cisco.sparksdk.kitchensink.actions;
 
 import android.net.Uri;
-import android.os.Environment;
 import android.util.Pair;
 import android.view.View;
 
@@ -36,6 +35,7 @@ import com.cisco.sparksdk.kitchensink.actions.events.OnIncomingCallEvent;
 import com.cisco.sparksdk.kitchensink.actions.events.RejectEvent;
 import com.ciscospark.androidsdk.CompletionHandler;
 import com.ciscospark.androidsdk.Spark;
+import com.ciscospark.androidsdk.membership.MembershipClient;
 import com.ciscospark.androidsdk.message.LocalFile;
 import com.ciscospark.androidsdk.message.Mention;
 import com.ciscospark.androidsdk.message.Message;
@@ -45,11 +45,8 @@ import com.ciscospark.androidsdk.phone.Call;
 import com.ciscospark.androidsdk.phone.CallObserver;
 import com.ciscospark.androidsdk.phone.MediaOption;
 import com.ciscospark.androidsdk.phone.Phone;
-import com.github.benoitdion.ln.Ln;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Date;
 
 import static com.cisco.sparksdk.kitchensink.actions.events.SparkAgentEvent.postEvent;
 
@@ -126,6 +123,11 @@ public class SparkAgent {
         });
     }
 
+    public void getMembership(String roomId, CompletionHandler handler) {
+        MembershipClient client = spark.memberships();
+        client.list(roomId, null, null, 0, handler);
+    }
+
     public boolean isCallIncoming() {
         return incomingCall != null && !incomingCall.getStatus().equals(Call.CallStatus.DISCONNECTED);
     }
@@ -152,11 +154,11 @@ public class SparkAgent {
 
 
     public void downloadThumbnail(RemoteFile file, File saveTo, MessageClient.ProgressHandler handler, CompletionHandler<Uri> completionHandler) {
-        getMessageClient().downloadThumbnail(file, saveTo.getPath(), handler, completionHandler);
+        getMessageClient().downloadThumbnail(file, saveTo == null ? null : saveTo.getPath(), handler, completionHandler);
     }
 
     public void downloadFile(RemoteFile file, File saveTo, MessageClient.ProgressHandler handler, CompletionHandler<Uri> completionHandler) {
-        getMessageClient().downloadFile(file, saveTo.getPath(), handler, completionHandler);
+        getMessageClient().downloadFile(file, saveTo == null ? null : saveTo.getPath(), handler, completionHandler);
     }
 
     public void dial(String callee, View localView, View remoteView, View screenSharing) {

@@ -23,6 +23,7 @@
 
 package com.cisco.sparksdk.kitchensink.actions;
 
+import android.net.Uri;
 import android.util.Pair;
 import android.view.View;
 
@@ -33,12 +34,20 @@ import com.cisco.sparksdk.kitchensink.actions.events.LoginEvent;
 import com.cisco.sparksdk.kitchensink.actions.events.OnIncomingCallEvent;
 import com.cisco.sparksdk.kitchensink.actions.events.RejectEvent;
 import com.ciscospark.androidsdk.Result;
+import com.ciscospark.androidsdk.CompletionHandler;
 import com.ciscospark.androidsdk.Spark;
+import com.ciscospark.androidsdk.membership.MembershipClient;
+import com.ciscospark.androidsdk.message.LocalFile;
+import com.ciscospark.androidsdk.message.Mention;
+import com.ciscospark.androidsdk.message.Message;
+import com.ciscospark.androidsdk.message.MessageClient;
+import com.ciscospark.androidsdk.message.RemoteFile;
 import com.ciscospark.androidsdk.phone.Call;
 import com.ciscospark.androidsdk.phone.CallObserver;
 import com.ciscospark.androidsdk.phone.MediaOption;
 import com.ciscospark.androidsdk.phone.Phone;
-import com.github.benoitdion.ln.Ln;
+
+import java.io.File;
 
 import static com.cisco.sparksdk.kitchensink.actions.events.SparkAgentEvent.postEvent;
 
@@ -55,6 +64,7 @@ public class SparkAgent {
 
     private Spark spark;
     private Phone phone;
+    private MessageClient messageClient;
     private Call activeCall;
     private Call incomingCall;
     private boolean isSpeakerOn = true;
@@ -127,10 +137,13 @@ public class SparkAgent {
         });
     }
 
+    public void getMembership(String roomId, CompletionHandler handler) {
+        MembershipClient client = spark.memberships();
+        client.list(roomId, null, null, 0, handler);
+    }
+
     public boolean isCallIncoming() {
-        Boolean rst = incomingCall != null && !incomingCall.getStatus().equals(Call.CallStatus.DISCONNECTED);
-        if (incomingCall != null) Ln.e(incomingCall.getStatus().toString());
-        return rst;
+        return incomingCall != null && !incomingCall.getStatus().equals(Call.CallStatus.DISCONNECTED);
     }
 
     public void setCallCapability(CallCap cap) {
@@ -141,6 +154,27 @@ public class SparkAgent {
         return callCap;
     }
 
+    public MessageClient getMessageClient() {
+        if (messageClient == null) {
+            messageClient = getSpark().messages();
+        }
+        return messageClient;
+    }
+
+    public void sendMessage(String idOrEmail, String message, Mention[] mentions, LocalFile[] files,
+                            CompletionHandler<Message> handler) {
+        getMessageClient().post(idOrEmail, message, mentions, files, handler);
+    }
+
+
+    public void downloadThumbnail(RemoteFile file, File saveTo, MessageClient.ProgressHandler handler, CompletionHandler<Uri> completionHandler) {
+        getMessageClient().downloadThumbnail(file, saveTo == null ? null : saveTo.getPath(), handler, completionHandler);
+    }
+
+    public void downloadFile(RemoteFile file, File saveTo, MessageClient.ProgressHandler handler, CompletionHandler<Uri> completionHandler) {
+        getMessageClient().downloadFile(file, saveTo == null ? null : saveTo.getPath(), handler, completionHandler);
+    }
+
     public void dial(String callee, View localView, View remoteView, View screenSharing) {
         isDialing = true;
         phone.dial(callee, getMediaOption(localView, remoteView, screenSharing), (Result<Call> result) -> {
@@ -149,7 +183,7 @@ public class SparkAgent {
                 if (!isDialing || activeCall == null) {
                     hangup();
                 } else {
-                    activeCall.setObserver(callObserver);
+                    if (activeCall != null) activeCall.setObserver(callObserver);
                 }
             }
             isDialing = false;

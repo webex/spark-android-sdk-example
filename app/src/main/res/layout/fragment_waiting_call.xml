@@ -4,8 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:elevation="10dp"
-    android:background="@color/cardview_light_background"
-    tools:context="com.cisco.sparksdk.kitchensink.com.cisco.sparksdk.kitchensink.InComingCallFragment">
+    android:background="#FFFFFFFF" >
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/reject"

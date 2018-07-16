@@ -30,7 +30,6 @@ import com.cisco.sparksdk.kitchensink.actions.IAction;
 import com.cisco.sparksdk.kitchensink.actions.SparkAgent;
 import com.cisco.sparksdk.kitchensink.actions.events.LoginEvent;
 import com.ciscospark.androidsdk.Spark;
-import com.ciscospark.androidsdk.auth.OAuthTestUserAuthenticator;
 import com.ciscospark.androidsdk.auth.OAuthWebViewAuthenticator;
 
 import static com.cisco.sparksdk.kitchensink.KitchenSinkApp.getApplication;
@@ -61,6 +60,7 @@ public class SparkIdLoginAction implements IAction {
         OAuthWebViewAuthenticator oAuth2;
         oAuth2 = new OAuthWebViewAuthenticator(clientId, clientSec, scope, redirect);
         Spark spark = new Spark(getApplication(), oAuth2);
+        spark.messages();
         SparkAgent.getInstance().setSpark(spark);
         oAuth2.authorize(view, result -> {
             if (result.isSuccessful()) {

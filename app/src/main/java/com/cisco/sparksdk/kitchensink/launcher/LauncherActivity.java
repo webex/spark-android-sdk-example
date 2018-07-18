@@ -30,11 +30,7 @@ import android.app.FragmentManager;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Switch;
 import android.widget.Toast;
 
@@ -112,9 +108,9 @@ public class LauncherActivity extends Activity {
     public void onEventMainThread(OnMediaChangeEvent event) {
         Ln.d("OnMediaChangeEvent: " + event.callEvent);
         if (event.callEvent instanceof CallObserver.SendingSharingEvent) {
-            Ln.d("Activity SendingSharingEvent: " + ((CallObserver.SendingSharingEvent)event.callEvent).isSending());
-            if (!((CallObserver.SendingSharingEvent)event.callEvent).isSending()){
-                cancelNotication();
+            Ln.d("Activity SendingSharingEvent: " + ((CallObserver.SendingSharingEvent) event.callEvent).isSending());
+            if (!((CallObserver.SendingSharingEvent) event.callEvent).isSending()) {
+                cancelNotification();
                 moveToFront();
                 updateSharingSwitch(false);
                 Toast.makeText(this, "Stop to share content", Toast.LENGTH_SHORT).show();
@@ -143,12 +139,12 @@ public class LauncherActivity extends Activity {
         }
     }
 
-    private void cancelNotication(){
+    private void cancelNotification() {
         NotificationManager notifyManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
         notifyManager.cancel(1);
     }
 
-    private void updateSharingSwitch(boolean flag){
+    private void updateSharingSwitch(boolean flag) {
         Switch shareSwitch = (Switch) findViewById(R.id.switchShareContent);
         if (shareSwitch != null && shareSwitch.isChecked())
             shareSwitch.setChecked(flag);

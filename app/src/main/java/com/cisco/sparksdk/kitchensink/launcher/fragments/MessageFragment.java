@@ -154,12 +154,10 @@ public class MessageFragment extends BaseFragment {
                     localFile.progressHandler = x -> {
                         text_status.setText("sending " + localFile.name + "...  " + x + "%");
                     };
-                    /*
                     localFile.thumbnail = new LocalFile.Thumbnail();
-                    localFile.thumbnail.path = thumbnail_file.getPath();
+                    localFile.thumbnail.path = f.getPath();
                     localFile.thumbnail.width = 622;
                     localFile.thumbnail.height = 492;
-                    */
                     arrayList.add(localFile);
                 }
             }
@@ -271,6 +269,77 @@ public class MessageFragment extends BaseFragment {
         }
     }
 
+    class FilesAdapter extends RecyclerView.Adapter<FilesAdapter.FilesViewHolder> {
+        private final LayoutInflater mLayoutInflater;
+        private final Context mContext;
+        private ArrayList<RemoteFile> mData;
+
+        FilesAdapter(Context context) {
+            mContext = context;
+            mLayoutInflater = LayoutInflater.from(mContext);
+            mData = new ArrayList<>();
+        }
+
+        @Override
+        public FilesAdapter.FilesViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            return new FilesViewHolder(mLayoutInflater.inflate(R.layout.listitem_file, parent, false));
+        }
+
+        @Override
+        public void onBindViewHolder(FilesAdapter.FilesViewHolder holder, int position) {
+            RemoteFile file = mData.get(position);
+            holder.textView.setText(file.displayName);
+            agent.downloadThumbnail(file, null, null, (uri) -> {
+                holder.imageView.setImageURI(uri.getData());
+                holder.progressBar.setVisibility(View.GONE);
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return mData.size();
+        }
+
+        class FilesViewHolder extends RecyclerView.ViewHolder {
+
+            @BindView(R.id.message_item_file)
+            ImageView imageView;
+
+            @BindView(R.id.message_item_file_download_progress)
+            ProgressBar progressBar;
+
+            @BindView(R.id.message_item_file_download)
+            ImageButton downloadButton;
+
+            @BindView(R.id.message_item_load_process)
+            TextView loadProcess;
+
+            @BindView(R.id.message_item_filename)
+            TextView textView;
+
+            @OnClick(R.id.message_item_file_download)
+            public void download() {
+                RemoteFile file = mData.get(getAdapterPosition());
+                agent.downloadFile(
+                        file,
+                        null,
+                        progress -> {
+                            loadProcess.setText(String.format("%s", Math.round(progress)));
+                        },
+                        uri -> {
+                            loadProcess.setText("complete");
+                            //message_file.setImageURI(uri.getData());
+                        }
+                );
+            }
+
+            public FilesViewHolder(View itemView) {
+                super(itemView);
+                ButterKnife.bind(this, itemView);
+            }
+        }
+    }
+
     class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageViewHolder> {
         private final LayoutInflater mLayoutInflater;
         private final Context mContext;
@@ -307,10 +376,17 @@ public class MessageFragment extends BaseFragment {
             }
             List<RemoteFile> list = message.getRemoteFiles();
             if (list != null && list.size() > 0) {
-                holder.message_file.setVisibility(View.VISIBLE);
-                holder.message_filename.setVisibility(View.VISIBLE);
-                holder.message_filename.setText(list.get(0).displayName);
+                FilesAdapter adapter = new FilesAdapter(mContext);
+                holder.recycler_files.setLayoutManager(new LinearLayoutManager(mContext));
+                holder.recycler_files.setAdapter(adapter);
+                adapter.mData.addAll(list);
+                adapter.notifyDataSetChanged();
 
+                //holder.message_file.setVisibility(View.VISIBLE);
+                //holder.message_filename.setVisibility(View.VISIBLE);
+                //holder.message_filename.setText(list.get(0).displayName);
+
+                /*
                 if (message.getRemoteFiles().get(0).thumbnail != null) {
                     holder.progressBar.setVisibility(View.VISIBLE);
                     RemoteFile file = message.getRemoteFiles().get(0);
@@ -319,11 +395,12 @@ public class MessageFragment extends BaseFragment {
                         holder.progressBar.setVisibility(View.GONE);
                     });
                 }
+                */
             } else {
-                holder.message_file.setVisibility(View.GONE);
-                holder.message_filename.setVisibility(View.GONE);
-                holder.message_file_process.setVisibility(View.GONE);
-                holder.message_download_button.setVisibility(View.GONE);
+                //holder.message_file.setVisibility(View.GONE);
+                //holder.message_filename.setVisibility(View.GONE);
+                //holder.message_file_process.setVisibility(View.GONE);
+                //holder.message_download_button.setVisibility(View.GONE);
             }
         }
 
@@ -333,6 +410,9 @@ public class MessageFragment extends BaseFragment {
         }
 
         class MessageViewHolder extends RecyclerView.ViewHolder {
+            @BindView(R.id.messageLayout)
+            View message_layout;
+
             @BindView(R.id.message_item_text)
             TextView message_text;
 
@@ -342,29 +422,14 @@ public class MessageFragment extends BaseFragment {
             @BindView(R.id.message_item_mention)
             TextView message_mention;
 
-            @BindView(R.id.message_item_file)
-            ImageView message_file;
-
-            @BindView(R.id.message_item_filename)
-            TextView message_filename;
-
-            @BindView(R.id.message_item_file_process)
-            TextView message_file_process;
+            @BindView(R.id.message_item_list_files)
+            RecyclerView recycler_files;
 
             @BindView(R.id.message_item_payload)
             TextView message_payload;
 
-            @BindView(R.id.messageLayout)
-            View message_layout;
-
             @BindView(R.id.payloadLayout)
             View message_payload_layout;
-
-            @BindView(R.id.message_item_file_download)
-            View message_download_button;
-
-            @BindView(R.id.message_item_file_progressbar)
-            ProgressBar progressBar;
 
             @OnClick(R.id.expand)
             public void expand() {
@@ -377,10 +442,11 @@ public class MessageFragment extends BaseFragment {
                 }
             }
 
+            /*
             @OnClick(R.id.message_item_file_download)
             public void download(View view) {
                 view.setEnabled(false);
-                message_file_process.setText("0");
+                //message_file_process.setText("0");
                 Message msg = mData.get(getAdapterPosition());
                 Ln.e(msg.toString());
                 if (msg.getRemoteFiles() != null) {
@@ -391,15 +457,16 @@ public class MessageFragment extends BaseFragment {
                             file,
                             null,
                             progress -> {
-                                message_file_process.setText(String.format("%s", Math.round(progress)));
+                                //message_file_process.setText(String.format("%s", Math.round(progress)));
                             },
                             uri -> {
-                                message_file_process.setText("complete");
+                                //message_file_process.setText("complete");
                                 //message_file.setImageURI(uri.getData());
                             }
                     );
                 }
             }
+            */
 
             MessageViewHolder(View view) {
                 super(view);

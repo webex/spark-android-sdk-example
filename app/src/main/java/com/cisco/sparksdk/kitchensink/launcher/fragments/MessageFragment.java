@@ -56,19 +56,19 @@ public class MessageFragment extends BaseFragment {
     private static final int FILE_SELECT_REQUEST = 1;
 
     @BindView(R.id.message_text)
-    EditText text_message;
+    EditText textMessage;
 
     @BindView(R.id.message_view)
-    RecyclerView recyclerView_message;
+    RecyclerView recyclerMessage;
 
     @BindView(R.id.message_mention)
-    ImageButton btn_mention;
+    ImageButton btnMention;
 
     @BindView(R.id.message_status)
-    TextView text_status;
+    TextView textStatus;
 
     @BindView(R.id.membership_recyclerview)
-    RecyclerView recyclerView_membership;
+    RecyclerView recyclerMembership;
 
     MessageAdapter adapterMessage;
 
@@ -107,9 +107,9 @@ public class MessageFragment extends BaseFragment {
     @Override
     public void onActivityCreated(Bundle saved) {
         super.onActivityCreated(saved);
-        recyclerView_message.setLayoutManager(new LinearLayoutManager(this.getActivity()));
+        recyclerMessage.setLayoutManager(new LinearLayoutManager(this.getActivity()));
         adapterMessage = new MessageAdapter(this.getActivity());
-        recyclerView_message.setAdapter(adapterMessage);
+        recyclerMessage.setAdapter(adapterMessage);
 
         messageClient.setMessageObserver(evt -> {
             if (evt instanceof MessageObserver.MessageArrived) {
@@ -118,7 +118,7 @@ public class MessageFragment extends BaseFragment {
                 adapterMessage.mData.add(event.getMessage());
                 adapterMessage.notifyDataSetChanged();
                 //if (event.getMessage().getPersonEmail().equals("sparksdktestuser16@tropo.com")) {
-                text_status.setText("");
+                textStatus.setText("");
                 //}
             } else {
                 MessageObserver.MessageDeleted event = (MessageObserver.MessageDeleted) evt;
@@ -126,17 +126,16 @@ public class MessageFragment extends BaseFragment {
             }
         });
 
-        recyclerView_membership.setLayoutManager(new LinearLayoutManager(this.getActivity()));
+        recyclerMembership.setLayoutManager(new LinearLayoutManager(this.getActivity()));
         adapterMembership = new MembershipAdapter(this.getActivity());
         adapterMembership.mData.add(new MembershipAll());
-        recyclerView_membership.setAdapter(adapterMembership);
+        recyclerMembership.setAdapter(adapterMembership);
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        //text_mention.setVisibility(View.GONE);
-        recyclerView_membership.setVisibility(View.GONE);
+        recyclerMembership.setVisibility(View.GONE);
         targetId = getTargetId();
     }
 
@@ -152,7 +151,7 @@ public class MessageFragment extends BaseFragment {
                 if (f.exists()) {
                     LocalFile localFile = new LocalFile(f);
                     localFile.progressHandler = x -> {
-                        text_status.setText("sending " + localFile.name + "...  " + x + "%");
+                        textStatus.setText("sending " + localFile.name + "...  " + x + "%");
                     };
                     localFile.thumbnail = new LocalFile.Thumbnail();
                     localFile.thumbnail.path = f.getPath();
@@ -195,10 +194,10 @@ public class MessageFragment extends BaseFragment {
 
     @OnClick(R.id.send_button)
     public void sendMessage(View btn) {
-        if (!TextUtils.isEmpty(text_message.getText())) {
+        if (!TextUtils.isEmpty(textMessage.getText())) {
             btn.setEnabled(false);
             agent.sendMessage(targetId,
-                    text_message.getText().toString(),
+                    textMessage.getText().toString(),
                     generateMentions(),
                     generateLocalFiles(),
                     rst -> {
@@ -206,11 +205,11 @@ public class MessageFragment extends BaseFragment {
                         selectedFile.clear();
                         btn.setEnabled(true);
                     });
-            text_status.setText("sending ...");
-            text_message.setText("");
+            textStatus.setText("sending ...");
+            textMessage.setText("");
         }
         //text_mention.setVisibility(View.GONE);
-        text_message.clearFocus();
+        textMessage.clearFocus();
         hideSoftKeyboard();
     }
 
@@ -228,12 +227,12 @@ public class MessageFragment extends BaseFragment {
 
     @OnClick(R.id.message_mention)
     public void mentionPeople() {
-        if (recyclerView_membership.getVisibility() != View.VISIBLE) {
-            recyclerView_membership.setVisibility(View.VISIBLE);
-            recyclerView_message.setVisibility(View.GONE);
+        if (recyclerMembership.getVisibility() != View.VISIBLE) {
+            recyclerMembership.setVisibility(View.VISIBLE);
+            recyclerMessage.setVisibility(View.GONE);
         } else {
-            recyclerView_membership.setVisibility(View.GONE);
-            recyclerView_message.setVisibility(View.VISIBLE);
+            recyclerMembership.setVisibility(View.GONE);
+            recyclerMessage.setVisibility(View.VISIBLE);
         }
         SparkAgent.getInstance().getMembership(getTargetId(), result -> {
             if (result.isSuccessful()) {
@@ -263,7 +262,7 @@ public class MessageFragment extends BaseFragment {
                     for (File f : selectedFile) {
                         buffer.append(" ").append(f.getName());
                     }
-                    text_status.setText(buffer.toString());
+                    textStatus.setText(buffer.toString());
                 }
             }
         }
@@ -288,10 +287,10 @@ public class MessageFragment extends BaseFragment {
         @Override
         public void onBindViewHolder(FilesAdapter.FilesViewHolder holder, int position) {
             RemoteFile file = mData.get(position);
-            holder.textView.setText(file.displayName);
+            holder.textFilename.setText(file.displayName);
             agent.downloadThumbnail(file, null, null, (uri) -> {
-                holder.imageView.setImageURI(uri.getData());
-                holder.progressBar.setVisibility(View.GONE);
+                holder.imageFile.setImageURI(uri.getData());
+                holder.progressBarDownload.setVisibility(View.GONE);
             });
         }
 
@@ -303,19 +302,19 @@ public class MessageFragment extends BaseFragment {
         class FilesViewHolder extends RecyclerView.ViewHolder {
 
             @BindView(R.id.message_item_file)
-            ImageView imageView;
+            ImageView imageFile;
 
             @BindView(R.id.message_item_file_download_progress)
-            ProgressBar progressBar;
+            ProgressBar progressBarDownload;
 
             @BindView(R.id.message_item_file_download)
-            ImageButton downloadButton;
+            ImageButton btnDownload;
 
             @BindView(R.id.message_item_load_process)
-            TextView loadProcess;
+            TextView textLoadProcess;
 
             @BindView(R.id.message_item_filename)
-            TextView textView;
+            TextView textFilename;
 
             @OnClick(R.id.message_item_file_download)
             public void download() {
@@ -324,11 +323,10 @@ public class MessageFragment extends BaseFragment {
                         file,
                         null,
                         progress -> {
-                            loadProcess.setText(String.format("%s", Math.round(progress)));
+                            textLoadProcess.setText(String.format("%s", Math.round(progress)));
                         },
                         uri -> {
-                            loadProcess.setText("complete");
-                            //message_file.setImageURI(uri.getData());
+                            textLoadProcess.setText("complete");
                         }
                 );
             }
@@ -360,47 +358,27 @@ public class MessageFragment extends BaseFragment {
         @Override
         public void onBindViewHolder(MessageViewHolder holder, int position) {
             Message message = mData.get(position);
-            holder.message_date.setText(message.getCreated().toString());
-            holder.message_text.setText(message.getText());
+            holder.textDate.setText(message.getCreated().toString());
+            holder.textMessage.setText(message.getText());
             try {
                 JSONObject json = new JSONObject(message.toString());
-                holder.message_payload.setText(json.toString(4));
+                holder.textPayload.setText(json.toString(4));
             } catch (JSONException e) {
                 Ln.e("JSONObject parse error");
-                holder.message_payload.setText(message.toString());
+                holder.textPayload.setText(message.toString());
             }
             if (message.isSelfMentioned) {
-                holder.message_mention.setVisibility(View.VISIBLE);
+                holder.textMention.setVisibility(View.VISIBLE);
             } else {
-                holder.message_mention.setVisibility(View.GONE);
+                holder.textMention.setVisibility(View.GONE);
             }
             List<RemoteFile> list = message.getRemoteFiles();
             if (list != null && list.size() > 0) {
                 FilesAdapter adapter = new FilesAdapter(mContext);
-                holder.recycler_files.setLayoutManager(new LinearLayoutManager(mContext));
-                holder.recycler_files.setAdapter(adapter);
+                holder.recyclerFiles.setLayoutManager(new LinearLayoutManager(mContext));
+                holder.recyclerFiles.setAdapter(adapter);
                 adapter.mData.addAll(list);
                 adapter.notifyDataSetChanged();
-
-                //holder.message_file.setVisibility(View.VISIBLE);
-                //holder.message_filename.setVisibility(View.VISIBLE);
-                //holder.message_filename.setText(list.get(0).displayName);
-
-                /*
-                if (message.getRemoteFiles().get(0).thumbnail != null) {
-                    holder.progressBar.setVisibility(View.VISIBLE);
-                    RemoteFile file = message.getRemoteFiles().get(0);
-                    agent.downloadThumbnail(message.getRemoteFiles().get(0), null, null, (uri) -> {
-                        holder.message_file.setImageURI(uri.getData());
-                        holder.progressBar.setVisibility(View.GONE);
-                    });
-                }
-                */
-            } else {
-                //holder.message_file.setVisibility(View.GONE);
-                //holder.message_filename.setVisibility(View.GONE);
-                //holder.message_file_process.setVisibility(View.GONE);
-                //holder.message_download_button.setVisibility(View.GONE);
             }
         }
 
@@ -411,62 +389,36 @@ public class MessageFragment extends BaseFragment {
 
         class MessageViewHolder extends RecyclerView.ViewHolder {
             @BindView(R.id.messageLayout)
-            View message_layout;
+            View layoutMessage;
 
             @BindView(R.id.message_item_text)
-            TextView message_text;
+            TextView textMessage;
 
             @BindView(R.id.message_item_date)
-            TextView message_date;
+            TextView textDate;
 
             @BindView(R.id.message_item_mention)
-            TextView message_mention;
+            TextView textMention;
 
             @BindView(R.id.message_item_list_files)
-            RecyclerView recycler_files;
+            RecyclerView recyclerFiles;
 
             @BindView(R.id.message_item_payload)
-            TextView message_payload;
+            TextView textPayload;
 
             @BindView(R.id.payloadLayout)
-            View message_payload_layout;
+            View layoutMessagePayload;
 
             @OnClick(R.id.expand)
             public void expand() {
-                if (message_payload_layout.getVisibility() != View.VISIBLE) {
-                    message_payload_layout.setVisibility(View.VISIBLE);
-                    message_layout.setVisibility(View.GONE);
+                if (layoutMessagePayload.getVisibility() != View.VISIBLE) {
+                    layoutMessagePayload.setVisibility(View.VISIBLE);
+                    layoutMessage.setVisibility(View.GONE);
                 } else {
-                    message_payload_layout.setVisibility(View.GONE);
-                    message_layout.setVisibility(View.VISIBLE);
+                    layoutMessagePayload.setVisibility(View.GONE);
+                    layoutMessage.setVisibility(View.VISIBLE);
                 }
             }
-
-            /*
-            @OnClick(R.id.message_item_file_download)
-            public void download(View view) {
-                view.setEnabled(false);
-                //message_file_process.setText("0");
-                Message msg = mData.get(getAdapterPosition());
-                Ln.e(msg.toString());
-                if (msg.getRemoteFiles() != null) {
-                    RemoteFile file = msg.getRemoteFiles().get(0);
-                    if (file == null)
-                        return;
-                    agent.downloadFile(
-                            file,
-                            null,
-                            progress -> {
-                                //message_file_process.setText(String.format("%s", Math.round(progress)));
-                            },
-                            uri -> {
-                                //message_file_process.setText("complete");
-                                //message_file.setImageURI(uri.getData());
-                            }
-                    );
-                }
-            }
-            */
 
             MessageViewHolder(View view) {
                 super(view);
@@ -525,10 +477,10 @@ public class MessageFragment extends BaseFragment {
             void onMembershipClick() {
                 int pos = getAdapterPosition();
                 Membership membership = mData.get(pos);
-                recyclerView_membership.setVisibility(View.GONE);
-                recyclerView_message.setVisibility(View.VISIBLE);
+                recyclerMembership.setVisibility(View.GONE);
+                recyclerMessage.setVisibility(View.VISIBLE);
                 mentionedMembershipList.add(membership);
-                text_message.getText().append("@" + membership.getPersonDisplayName()).append(" ");
+                textMessage.getText().append("@" + membership.getPersonDisplayName()).append(" ");
             }
 
             MembershipViewHolder(View itemView) {

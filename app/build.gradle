@@ -19,12 +19,6 @@ android {
         buildConfigField "String", "CLIENT_SEC", "\"0dc8b9c77c8b5597e7eef4b72c7dfaf8d5b834fdba24cf0a0b55eb85ae209b31\""
         buildConfigField "String", "REDIRECT_URL", "\"AndroidKitchenSink://response\""
         buildConfigField "String", "SCOPE", "\"spark:all\""
-        /*
-        buildConfigField "String", "CLIENT_ID", "\"C416dd36dd57b536a35816978e4f063a98849d285ca191f5566a32c0f0c3481ab\""
-        buildConfigField "String", "CLIENT_SEC", "\"bc851e0f4d4bd62c020a45de08e374101910200d43096f32d14b9e08164adac7\""
-        buildConfigField "String", "REDIRECT_URL", "\"KitchenSink://response\""
-        buildConfigField "String", "SCOPE", "\"spark:all\""
-        */
     }
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'

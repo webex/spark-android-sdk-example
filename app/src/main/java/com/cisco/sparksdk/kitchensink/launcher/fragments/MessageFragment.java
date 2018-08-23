@@ -26,6 +26,7 @@ import android.widget.TextView;
 
 import com.cisco.sparksdk.kitchensink.R;
 import com.cisco.sparksdk.kitchensink.actions.SparkAgent;
+import com.cisco.sparksdk.kitchensink.actions.commands.RequirePermissionAction;
 import com.cisco.sparksdk.kitchensink.ui.BaseFragment;
 import com.ciscospark.androidsdk.membership.Membership;
 import com.ciscospark.androidsdk.message.LocalFile;
@@ -139,6 +140,10 @@ public class MessageFragment extends BaseFragment {
         targetId = getTargetId();
     }
 
+    private void requirePermission() {
+        new RequirePermissionAction(getActivity()).execute();
+    }
+
     @Override
     public void onBackPressed() {
         super.onBackPressed();
@@ -216,6 +221,7 @@ public class MessageFragment extends BaseFragment {
 
     @OnClick(R.id.message_upload_file)
     public void selectFile() {
+        requirePermission();
         Intent intent = new Intent();
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("*/*");

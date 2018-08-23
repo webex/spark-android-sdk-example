@@ -27,6 +27,7 @@ import android.widget.TextView;
 import com.cisco.sparksdk.kitchensink.R;
 import com.cisco.sparksdk.kitchensink.actions.SparkAgent;
 import com.cisco.sparksdk.kitchensink.actions.commands.RequirePermissionAction;
+import com.cisco.sparksdk.kitchensink.actions.events.PermissionAcquiredEvent;
 import com.cisco.sparksdk.kitchensink.ui.BaseFragment;
 import com.ciscospark.androidsdk.membership.Membership;
 import com.ciscospark.androidsdk.message.LocalFile;
@@ -37,6 +38,8 @@ import com.ciscospark.androidsdk.message.MessageObserver;
 import com.ciscospark.androidsdk.message.RemoteFile;
 import com.github.benoitdion.ln.Ln;
 
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -222,6 +225,11 @@ public class MessageFragment extends BaseFragment {
     @OnClick(R.id.message_upload_file)
     public void selectFile() {
         requirePermission();
+    }
+
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onEventMainThread(PermissionAcquiredEvent event) {
         Intent intent = new Intent();
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("*/*");
@@ -229,7 +237,6 @@ public class MessageFragment extends BaseFragment {
         startActivityForResult(Intent.createChooser(intent,
                 "Select File"), FILE_SELECT_REQUEST);
     }
-
 
     @OnClick(R.id.message_mention)
     public void mentionPeople() {
